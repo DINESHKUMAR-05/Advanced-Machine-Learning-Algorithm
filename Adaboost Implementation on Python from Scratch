@@ -1,0 +1,93 @@
+def adaboost():
+    
+    # Importing the required Libraries
+    import numpy as np
+    import pandas as pd
+    
+    # Loading the Dataset by entering the name or root of the dataset
+    name=str(input("Enter the name or root of the dataset : "))
+    data=pd.read_csv(name) 
+    
+    
+    # Creating a column weight 
+    weight=[]          
+    for i in range(len(data)):
+        weight.append(float((1/len(data))))
+        
+    data["weight"]=weight
+    
+    # Splitting the data into X and y
+    X=data.iloc[:,:-2].values
+    y=data.iloc[:,-2].values
+    
+    # Iteratively building the model untill getting the error free weights or till a threshold we want
+    n=int(input("Enter the number of iterations you need to run for : "))
+    x=0
+    while(x<n):
+        
+        print("\n--------------------------------------------\nIteration ",x+1," :\n")
+        
+        # Creating a Stump using Decision Tree Library with max_depth=1
+        from sklearn.tree import DecisionTreeClassifier as DTC
+        dt=DTC(max_depth=1)
+        dt.fit(X,y,sample_weight=weight)
+        y_pred=dt.predict(X)
+        
+        # Creating column y_pred
+        data['y_pred']=y_pred
+        
+        print("Before Updation : \n\n",data)
+    
+        # Finding the Total Error
+        def find_error(y,y_pred):
+            return(sum(weight * (np.not_equal(y, y_pred)).astype(int)))/sum(weight)
+        total_error=find_error(y,y_pred)
+        
+        print("\nTotal Error:",total_error)
+        
+        # Finding the Performance(alpha)
+        def find_alpha(total_error):
+            return(1/2*(np.log((1-total_error)/total_error)))
+        
+        alpha=find_alpha(total_error)
+        
+        print("\nAlpha Value :",alpha,"\n")
+        
+        # Updating the weight
+        def update_weight(weight,alpha,data):
+            for i in range(len(data)):
+                if(data['Y'][i]!=data['y_pred'][i]):
+                    weight[i]=weight[i]*np.exp(alpha)
+                if(data['Y'][i]==data['y_pred'][i]):
+                     weight[i]=weight[i]*np.exp(-1*alpha)
+            
+            # Normalizing the weights
+            sumofweights=0
+            for i in range(len(data)):
+                sumofweights=sumofweights+weight[i]
+            if(sumofweights<1):
+                for i in range(len(data)):
+                    weight[i]=weight[i]/sumofweights
+                
+        
+        update_weight(weight, alpha,data)
+        
+        # Updating newly updated weight
+        data['weight']=weight
+        
+        print("After Updation :\n\n",data)
+        
+        print("\n--------------------------------------------")
+        
+        k=0
+        for j in range(len(data)):
+             if(data['y_pred'][j]==data['Y'][j]):
+                k=k+1
+        if(k==len(data)):
+            print("\nThe Final Answer is :\n",data)
+            print("\n--------------------------------------------")
+            break
+        x=x+1
+            
+       
+adaboost()
